@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html ng-app="exampleApp">
+<head>
+    <title>Products</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.9/angular-resource.js"></script>
+    <link href="bootstrap.css" rel="stylesheet" />
+    <link href="bootstrap-theme.css" rel="stylesheet" />
+    <script type="text/javascript">
+    	var app = angular.module('exampleApp', ['ngResource']);
+    	app.constant('baseURL', 'http://localhost:5500/products/');
+    	
+    	app.controller('defaultCtrl', ['$scope','$http','baseURL','$resource',
+    	                               function($scope,$http,baseURL,$resource){
+    		$scope.displayMode = 'list';
+    		$scope.currentProduct = null;
+    		
+    		$scope.productResource = $resource(baseURL + ":id", {id: '@id'})
+    		
+    		$scope.listProducts = function(){
+    			$scope.products = $scope.productResource.query()
+    		}
+    		
+    		$scope.deleteProduct = function(product){
+    			product.$delete().then(function(data){
+    				$scope.products.splice($scope.products.indexOf(product), 1);
+    			},function(data){
+    				console.log('List Get=> ', status)
+    			})
+
+    		}
+    		
+    		$scope.editOrCreateProduct = function(product){
+    			if(product){
+    				console.log('Edit ID=> ', product.id)
+    			}
+    			$scope.currentProduct = product ? angular.copy(product) : {};
+    			$scope.displayMode = 'edit';
+    		}
+    		
+    		$scope.saveEdit = function(product){
+    			console.log('ID=> ', product.id)
+    			if(angular.isDefined(product.id)){
+    				$scope.updateProduct(product)
+    			}else{
+    				$scope.createProduct(product);
+    			}
+    		}
+    		
+    		$scope.updateProduct = function(product){
+    			product.$save().then(function(data){
+    				// 새로 갱신된 자료를 화면에 표시
+        			$scope.listProducts();
+    				$scope.displayMode = 'list';
+    			},function(data){
+    				console.log('List Get=> ', status)
+    			})
+    		}
+    		
+    		$scope.createProduct = function(product){
+    			new $scope.productResource(product).$save().then(function(data){
+    				
+    				console.log(product);	// id가 없음
+    				console.log(data);		// id를 생성한 객체를 리턴해 준다
+    				
+    				// id가 있는 data를 화면에 표시해야 한다
+    				$scope.products.push(data);
+        			$scope.displayMode = 'list';
+        			
+        			// 새로 갱신된 자료를 화면에 표시
+        			//$scope.listProducts();
+    			},function(data){
+    				
+    			})
+    			
+    		}
+    		
+    		$scope.cancelEdit = function(){
+    			$scope.currentProduct = {};
+    			$scope.displayMode = 'list';
+    		}
+    		
+    		
+    		$scope.listProducts();
+    	}]);
+    </script>
+</head>
+<body ng-controller="defaultCtrl">
+    <div class="panel panel-primary">
+        <h3 class="panel-heading">Products</h3>
+        <ng-include src="'data/tableView.html'" ng-show="displayMode == 'list'"></ng-include>
+        <ng-include src="'data/editorView.html'" ng-show="displayMode == 'edit'"></ng-include>
+    </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
